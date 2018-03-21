@@ -73,7 +73,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     #TODO 364: In order to complete a relationship with a table that is detailed below (a one-to-many relationship for users and gif collections), you'll need to add a field to this User model. (Check out the TODOs for models below for more!)
     # Remember, the best way to do so is to add the field, save your code, and then create and run a migration!
-
+    gigID = db.Column(db.Integer, db.Forgeinkey('personalGifCollection.id'))
     @property
     def password(self):
         raise AttributeError('password is not a readable attribute')
@@ -95,27 +95,29 @@ def load_user(user_id):
 
 # Model to store gifs
 class Gif(db.Model):
-    pass # Replace with code
-    # TODO 364: Add code for the Gif model such that it has the following fields:
-    # id (Integer, primary key)
-    # title (String up to 128 characters)
-    # embedURL (String up to 256 characters)
-
-    # TODO 364: Define a __repr__ method for the Gif model that shows the title and the URL of the gif
+    __tablename__ = "gifs"
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.Sting(128))
+    embedURL = db.Column(db.String(128))
+    
+    def __repr__(self):
+        return "{}, URL:{}".format(self.title, self.embedURL)
 
 # Model to store a personal gif collection
 class PersonalGifCollection(db.Model):
-    pass
+    __tablename__ = "personalGifCollection"
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String(255))
+    #collection = db.relationship('Users')
     # TODO 364: Add code for the PersonalGifCollection model such that it has the following fields:
-    # id (Integer, primary key)
-    # name (String, up to 255 characters)
-
     # This model should have a one-to-many relationship with the User model (one user, many personal collections of gifs with different names -- say, "Happy Gif Collection" or "Sad Gif Collection")
 
     # This model should also have a many to many relationship with the Gif model (one gif might be in many personal collections, one personal collection could have many gifs in it).
 
 class SearchTerm(db.Model):
-    pass
+    __tablename__ = 'search'
+    id = db.Column(db.Integer, primary_key=True)
+    term = 
     # TODO 364: Add code for the SearchTerm model such that it has the following fields:
     # id (Integer, primary key)
     # term (String, up to 32 characters, unique) -- You want to ensure the database cannot save non-unique search terms
