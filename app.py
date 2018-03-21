@@ -29,7 +29,7 @@ app = Flask(__name__)
 app.debug = True
 app.use_reloader = True
 app.config['SECRET_KEY'] = 'hardtoguessstring'
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/HW4db" # TODO 364: You should edit this to correspond to the database name YOURUNIQNAMEHW4db and create the database of that name (with whatever your uniqname is; for example, my database would be jczettaHW4db). You may also need to edit the database URL further if your computer requires a password for you to run this.
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/HW4db1" # TODO 364: You should edit this to correspond to the database name YOURUNIQNAMEHW4db and create the database of that name (with whatever your uniqname is; for example, my database would be jczettaHW4db). You may also need to edit the database URL further if your computer requires a password for you to run this.
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -55,9 +55,9 @@ login_manager.init_app(app) # set up login manager
 # NOTE: Remember that setting up association tables in this course always has the same structure! Just make sure you refer to the correct tables and columns!
 
 # TODO 364: Set up association Table between search terms and GIFs (you can call it anything you want, we suggest 'tags' or 'search_gifs').
-search_gifs = db.Table('search_gifs',db.Column('search_id',db.Integer,db.Forgeinkey('search.id')),db.Column('gif_id',db.Integer,db.Forgeinkey('gifs.id')))
+search_gifs = db.Table('search_gifs',db.Column('search_id',db.Integer,db.ForeignKey('search.id')),db.Column('gif_id',db.Integer,db.ForeignKey('gifs.id')))
 # TODO 364: Set up association Table between GIFs and collections prepared by user (you can call it anything you want. We suggest: user_collection)
-user_collection = db.Table('user_collection',db.Column('user_id',db.Integer,db.Forgeinkey('gifs.id')),db.Column('collection_id',db.Integer,db.Forgeinkey('personalGifCollection.id')))
+user_collection = db.Table('user_collection',db.Column('user_id',db.Integer,db.ForeignKey('gifs.id')),db.Column('collection_id',db.Integer,db.ForeignKey('personalGifCollection.id')))
 
 
 ## User-related Models
@@ -98,7 +98,7 @@ class Gif(db.Model):
     # id (Integer, primary key)
     id = db.Column(db.Integer, primary_key=True)
     # title (String up to 128 characters)
-    title = db.Column(db.Sting(128))
+    title = db.Column(db.String(128))
     # embedURL (String up to 256 characters)
     embedURL = db.Column(db.String(128))
     # TODO 364: Define a __repr__ method for the Gif model that shows the title and the URL of the gif
@@ -114,9 +114,9 @@ class PersonalGifCollection(db.Model):
     # name (String, up to 255 characters)
     name = db.Column(db.String(255))
     # This model should have a one-to-many relationship with the User model (one user, many personal collections of gifs with different names -- say, "Happy Gif Collection" or "Sad Gif Collection")
-    user_id = db.Column(db.Integer,db.Forgeinkey('users.id'))
+    user_id = db.Column(db.Integer,db.ForeignKey('users.id'))
     # This model should also have a many to many relationship with the Gif model (one gif might be in many personal collections, one personal collection could have many gifs in it).
-    gifs = db.relationship('Gif',secondary=user_collection,db.backref('personalGifCollection',lazy='dynamic'),lazy='dynamic')
+    gifs = db.relationship('Gif',secondary=user_collection,backref=db.backref('personalGifCollection',lazy='dynamic'),lazy='dynamic')
 
 class SearchTerm(db.Model):
     __tablename__ = 'search'
@@ -189,7 +189,7 @@ def get_gifs_from_giphy(search_string):
     rt = json.loads(r.text)
     for elem in rt['data']:
         title = elem['title']
-        url = elem['url']
+        url = elem['embed_url']
         tup = (title, url)
         gif_list.append(tup)
     return gif_list
@@ -218,15 +218,15 @@ def get_or_create_gif(title, url):
 def get_or_create_search_term(term):
     """Always returns a SearchTerm instance"""
     # TODO 364: This function should return the search term instance if it already exists.
-    searchT = Search.query.filter_by(term=term).first()
+    searchT = SearchTerm.query.filter_by(term=term).first()
     # If it does not exist in the database yet, this function should create a new SearchTerm instance.
     if searchT:
         return searchT
     # This function should invoke the get_gifs_from_giphy function to get a list of gif data from Giphy.
     else:
-        searchT = Search(term=term)
+        searchT = SearchTerm(term=term)
         gif_list = get_gifs_from_giphy(term)
-        for elem in gif_dicts:
+        for elem in gif_list:
             title = elem[0]
             url = elem[1]
             gif_obj = get_or_create_gif(title,url)
@@ -315,7 +315,7 @@ def index():
     form = GifSearchForm()
     if form.validate_on_submit():
         get_or_create_search_term(form.search.data)
-        return url_for('search_results', form.search.data)
+        return redirect(url_for('search_results', search_term=form.search.data))
     # HINT: invoking url_for with a named argument will send additional data. e.g. url_for('artist_info',artist='solange') would send the data 'solange' to a route /artist_info/<artist>
     return render_template('index.html',form=form)
 
@@ -324,6 +324,7 @@ def index():
 def search_results(search_term):
     term = SearchTerm.query.filter_by(term=search_term).first()
     relevant_gifs = term.gifs.all()
+    print(relevant_gifs)
     return render_template('searched_gifs.html',gifs=relevant_gifs,term=term)
 
 @app.route('/search_terms')
