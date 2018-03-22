@@ -29,7 +29,7 @@ app = Flask(__name__)
 app.debug = True
 app.use_reloader = True
 app.config['SECRET_KEY'] = 'hardtoguessstring'
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/HW4db1" # TODO 364: You should edit this to correspond to the database name YOURUNIQNAMEHW4db and create the database of that name (with whatever your uniqname is; for example, my database would be jczettaHW4db). You may also need to edit the database URL further if your computer requires a password for you to run this.
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/HW4db" # TODO 364: You should edit this to correspond to the database name YOURUNIQNAMEHW4db and create the database of that name (with whatever your uniqname is; for example, my database would be jczettaHW4db). You may also need to edit the database URL further if your computer requires a password for you to run this.
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -333,7 +333,7 @@ def index():
 def search_results(search_term):
     term = SearchTerm.query.filter_by(term=search_term).first()
     relevant_gifs = term.gifs.all()
-    print(relevant_gifs)
+    #print(relevant_gifs)
     return render_template('searched_gifs.html',gifs=relevant_gifs,term=term)
 
 @app.route('/search_terms')
@@ -361,17 +361,21 @@ def create_collection():
     form.gif_picks.choices = choices
     # TODO 364: If the form validates on submit, get the list of the gif ids that were selected from the form. Use the get_gif_by_id function to create a list of Gif objects.  Then, use the information available to you at this point in the function (e.g. the list of gif objects, the current_user) to invoke the get_or_create_collection function, and redirect to the page that shows a list of all your collections.
     # If the form is not validated, this view function should simply render the create_collection.html template and send the form to the template.
-    if request.method == 'POST':
-        gifs_sec = form.gif_picked.data
+    if request.method=='POST':
+        gifs_sec = form.gif_picks.data
         gif_obj = [get_gif_by_id(int(id)) for id in gifs_sec]
         get_or_create_collection(current_user=current_user,name=form.name.data,gif_list=gif_obj)
-        return "collection made"
+        #return "collection made"
+        return redirect(url_for('collections'))
     return render_template('create_collection.html',form=form)
+
 @app.route('/collections',methods=["GET","POST"])
 @login_required
 def collections():
-    pass # Replace with code
+    #pass # Replace with code
     # TODO 364: This view function should render the collections.html template so that only the current user's personal gif collection links will render in that template. Make sure to examine the template so that you send it the correct data!
+    user_col = PersonalGifCollection.query.filter_by(user_id=current_user.id).all()
+    return render_template('collections.html', collections=user_col)
 
 # Provided
 @app.route('/collection/<id_num>')
