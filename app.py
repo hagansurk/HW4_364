@@ -33,6 +33,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postg
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
+app.config['HEROKU_ON'] = os.environ.get('HEROKU')
+    
 # App addition setups
 manager = Manager(app)
 db = SQLAlchemy(app)
